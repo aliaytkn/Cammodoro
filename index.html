@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cammodoro">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Cammodoro</title>
+<style>
+  :root{
+    --c:#ff5a3c;            /* active mode colour, set from JS */
+    --bg:#000;
+    --panel:#111214;
+    --line:#26282c;
+    --text:#e9eaec;
+    --dim:#8a8d94;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);
+    -webkit-user-select:none;user-select:none;overscroll-behavior:none;touch-action:manipulation}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  button{font:inherit;color:inherit;cursor:pointer}
+  main{min-height:100%;max-width:1180px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+  .bar{margin-top:auto} .today{margin-bottom:auto}
+
+  /* ---------- top bar ---------- */
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .modes{display:flex;gap:6px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .modes button{border:0;background:transparent;color:var(--dim);padding:10px clamp(8px,2.6vw,14px);border-radius:9px;
+    font-size:13px;letter-spacing:.08em;text-transform:uppercase;min-height:44px}
+  .modes button[aria-pressed="true"]{background:var(--c);color:#000;font-weight:700}
+  .tools{display:flex;gap:6px}
+  .tools button{width:clamp(40px,11vw,48px);height:48px;border-radius:12px;border:1px solid var(--line);background:var(--panel);
+    display:grid;place-items:center}
+  .tools svg{width:22px;height:22px;stroke:var(--text);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ---------- the "device" ---------- */
+  .device{background:#0b0b0c;border:1px solid var(--line);border-radius:22px;padding:clamp(10px,2.2vw,22px);
+    box-shadow:inset 0 0 0 6px #050505, 0 0 60px color-mix(in srgb,var(--c) 10%,transparent);
+    width:100%;max-width:calc((100dvh - 250px) * 4 + 60px);margin:0 auto}
+  #lcd{display:block;width:100%}
+  .status{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+    width:100%;max-width:calc((100dvh - 250px) * 4 + 60px);margin:-4px auto 0}
+  #modeName{color:var(--c);font-weight:700}
+  .rounds{display:flex;gap:8px;align-items:center}
+  .rounds i{width:14px;height:14px;border-radius:3px;background:#1d1e21;display:block}
+  .rounds i.on{background:var(--c);box-shadow:0 0 10px var(--c)}
+
+  /* ---------- controls ---------- */
+  .task{width:100%;max-width:560px;margin:0 auto}
+  .task input{width:100%;height:48px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    color:var(--text);font:inherit;font-size:15px;padding:0 16px;text-align:center;-webkit-user-select:text;user-select:text}
+  .task input::placeholder{color:#55585e}
+  .task input:focus{outline:2px solid var(--c);outline-offset:1px}
+  .controls{display:grid;grid-template-columns:1fr 2.2fr 1fr;gap:12px;width:100%;max-width:560px;margin:0 auto}
+  .controls button{height:72px;border-radius:16px;border:1px solid var(--line);background:var(--panel);
+    font-size:15px;letter-spacing:.12em;text-transform:uppercase}
+  .controls button:active{transform:scale(.98)}
+  #go{background:var(--c);color:#000;border-color:transparent;font-weight:800;font-size:20px}
+  .today{text-align:center;font-size:13px;color:var(--dim);letter-spacing:.06em;margin:0}
+  .today b{color:var(--text)}
+
+  /* ---------- dialogs ---------- */
+  dialog{background:#101113;color:var(--text);border:1px solid var(--line);border-radius:20px;padding:0;
+    width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
+  dialog::backdrop{background:rgba(0,0,0,.75)}
+  .dlg{padding:20px;display:flex;flex-direction:column;gap:14px}
+  .dlg h2{margin:0;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:15px;min-height:44px}
+  .row input[type=number]{width:84px;height:44px;background:#000;border:1px solid var(--line);border-radius:10px;
+    color:var(--text);font:inherit;text-align:center;font-size:17px}
+  .row input[type=range]{width:180px;accent-color:var(--c)}
+  .switch{appearance:none;-webkit-appearance:none;width:52px;height:30px;border-radius:15px;background:#26282c;position:relative;
+    flex:none;transition:background .15s;cursor:pointer}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
+  .switch:checked{background:var(--c)}
+  .switch:checked::after{transform:translateX(22px)}
+  .close{height:52px;border-radius:14px;border:0;background:var(--c);color:#000;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  .sub{font-size:12px;color:var(--dim);margin:0;line-height:1.5}
+  .big{display:flex;gap:12px}
+  .big div{flex:1;background:#000;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+  .big strong{display:block;font-size:30px;color:var(--c)}
+  .big span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  #week{display:block;width:100%}
+  .days{display:flex;font-size:11px;color:var(--dim);text-align:center}
+  .days span{flex:1}
+  .days span.today{color:var(--c);font-weight:700}
+  ul.log{list-style:none;margin:0;padding:0;max-height:180px;overflow:auto;font-size:14px}
+  ul.log li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  ul.log li span:first-child{color:var(--dim);flex:none}
+  ul.log li span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .link{background:none;border:0;color:var(--dim);text-decoration:underline;font-size:12px;padding:8px}
+
+  /* ---------- display (zen) mode ---------- */
+  body.zen .bar, body.zen .task, body.zen .controls, body.zen .today{display:none}
+  body.zen .device{max-width:calc((100dvh - 120px) * 4 + 60px)}
+  body.zen .status{max-width:calc((100dvh - 120px) * 4 + 60px)}
+  @media (max-height:520px){ main{gap:8px;padding:10px} .controls button{height:56px} .task,.today{display:none} .tools button{height:44px} .device,.status{max-width:calc((100dvh - 205px) * 4 + 40px)} body.zen .device,body.zen .status{max-width:calc((100dvh - 90px) * 4 + 40px)} }
+</style>
+</head>
+<body>
+<main id="app">
+  <div class="bar">
+    <div class="modes" role="group" aria-label="Timer mode">
+      <button data-mode="focus" aria-pressed="true">Focus</button>
+      <button data-mode="short" aria-pressed="false">Short</button>
+      <button data-mode="long" aria-pressed="false">Long</button>
+    </div>
+    <div class="tools">
+      <button id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></button>
+      <button id="btnZen" aria-label="Display mode"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      <button id="btnSet" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
+    </div>
+  </div>
+
+  <section class="device" id="device" aria-label="Timer display"><canvas id="lcd" role="img" aria-label="Pixel timer"></canvas></section>
+  <div class="status"><span id="modeName">Focus</span><span class="rounds" id="rounds" aria-label="Pomodoros in this cycle"></span></div>
+
+  <div class="task"><input id="label" type="text" maxlength="60" placeholder="What are you working on?" autocomplete="off" enterkeyhint="done"></div>
+
+  <div class="controls">
+    <button id="reset">Reset</button>
+    <button id="go">Start</button>
+    <button id="skip">Skip</button>
+  </div>
+  <p class="today" id="todayLine"></p>
+</main>
+
+<dialog id="dlgSet"><form method="dialog" class="dlg">
+  <h2>Settings</h2>
+  <label class="row">Focus (min)<input type="number" id="s_focus" min="1" max="99" inputmode="numeric"></label>
+  <label class="row">Short break (min)<input type="number" id="s_short" min="1" max="99" inputmode="numeric"></label>
+  <label class="row">Long break (min)<input type="number" id="s_long" min="1" max="99" inputmode="numeric"></label>
+  <label class="row">Focus rounds before long break<input type="number" id="s_rounds" min="1" max="12" inputmode="numeric"></label>
+  <label class="row">Auto-start next timer<input type="checkbox" class="switch" id="s_autostart"></label>
+  <label class="row">Sound<input type="checkbox" class="switch" id="s_sound"></label>
+  <label class="row">Vibrate<input type="checkbox" class="switch" id="s_vibrate"></label>
+  <label class="row">Keep screen on while running<input type="checkbox" class="switch" id="s_awake"></label>
+  <label class="row">Brightness<input type="range" id="s_bright" min="15" max="100"></label>
+  <button class="close">Done</button>
+</form></dialog>
+
+<dialog id="dlgStats"><form method="dialog" class="dlg">
+  <h2>Progress</h2>
+  <div class="big">
+    <div><strong id="st_today">0</strong><span>Today</span></div>
+    <div><strong id="st_min">0</strong><span>Focus min</span></div>
+    <div><strong id="st_total">0</strong><span>All time</span></div>
+  </div>
+  <canvas id="week"></canvas>
+  <div class="days" id="weekLabels"></div>
+  <p class="sub">Last 7 days · one pixel = one finished pomodoro (max 8 shown per day)</p>
+  <h2>Today</h2>
+  <ul class="log" id="todayLog"></ul>
+  <button type="button" class="link" id="clearLog">Clear all history</button>
+  <button class="close">Done</button>
+</form></dialog>
+
+<script>
+"use strict";
+/* ============================================================
+   Cammodoro — pixel-matrix pomodoro timer
+   32 × 8 LED matrix, in the spirit of small pixel clocks.
+   Layout (columns): 0-4 mode icon | 7-11,13-17 minutes | 19 colon | 21-25,27-31 seconds
+   Rows: 0-6 digits, 7 progress bar
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+};
+
+/* ---------- pixel fonts (5 x 7) ---------- */
+const DIGITS = [
+ ["01110","10001","10011","10101","11001","10001","01110"],
+ ["00100","01100","00100","00100","00100","00100","01110"],
+ ["01110","10001","00001","00010","00100","01000","11111"],
+ ["11110","00001","00001","01110","00001","00001","11110"],
+ ["00010","00110","01010","10010","11111","00010","00010"],
+ ["11111","10000","11110","00001","00001","10001","01110"],
+ ["00110","01000","10000","11110","10001","10001","01110"],
+ ["11111","00001","00010","00100","01000","01000","01000"],
+ ["01110","10001","10001","01110","10001","10001","01110"],
+ ["01110","10001","10001","01111","00001","00010","01100"],
+];
+const ICONS = {
+  focus:["00100","01110","11111","11111","11111","11111","01110"],   // tomato
+  short:["01010","10100","00000","11110","10011","11110","11110"],   // cup
+  long: ["00110","01100","11000","11000","11000","01100","00110"],   // moon
+};
+const MODES = {
+  focus:{name:"Focus",       color:"#ff5a3c"},
+  short:{name:"Short break", color:"#35e08c"},
+  long: {name:"Long break",  color:"#3db8ff"},
+};
+
+/* ---------- settings + state ---------- */
+const DEF = {focus:25, short:5, long:15, rounds:4, autostart:true, sound:true, vibrate:true, awake:true, bright:100};
+const cfg = Object.assign({}, DEF, store.get("cammodoro.cfg", {}));
+const dur = m => cfg[m] * 60000;
+let st = Object.assign({mode:"focus", running:false, endsAt:0, remaining:dur("focus"), done:0, label:""}, store.get("cammodoro.state", {}));
+let flashUntil = 0;
+const saveState = () => store.set("cammodoro.state", st);
+const saveCfg   = () => store.set("cammodoro.cfg", cfg);
+
+/* ---------- history ---------- */
+const getLog = () => store.get("cammodoro.log", []);
+const addLog = e => { const l = getLog(); l.push(e); store.set("cammodoro.log", l.slice(-2000)); };
+const dayKey = t => { const d = new Date(t); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); };
+
+/* ---------- time helpers ---------- */
+const remainingMs = () => st.running ? Math.max(0, st.endsAt - Date.now()) : st.remaining;
+const pad2 = n => String(n).padStart(2, "0");
+
+/* ---------- matrix renderer ---------- */
+function drawMatrix(cv, cols, rows, fn, color){
+  const w = cv.clientWidth; if(!w) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cell = w / cols, h = cell * rows;
+  const W = Math.round(w*dpr), H = Math.round(h*dpr);
+  if(cv.width !== W || cv.height !== H){ cv.width = W; cv.height = H; cv.style.height = h + "px"; }
+  const g = cv.getContext("2d");
+  g.clearRect(0, 0, W, H);
+  const c = cell*dpr, pad = c*0.13, s = c - pad*2, r = s*0.24;
+  for(let y=0; y<rows; y++){
+    for(let x=0; x<cols; x++){
+      const v = fn(x, y);
+      if(v > 0){ g.shadowColor = color; g.shadowBlur = c*0.55*v; g.fillStyle = color; g.globalAlpha = Math.min(1, v); }
+      else     { g.shadowBlur = 0; g.fillStyle = "#ffffff"; g.globalAlpha = 0.075; }
+      const px = x*c + pad, py = y*c + pad;
+      g.beginPath();
+      if(g.roundRect) g.roundRect(px, py, s, s, r); else g.rect(px, py, s, s);
+      g.fill();
+    }
+  }
+  g.globalAlpha = 1; g.shadowBlur = 0;
+}
+
+/* ---------- main display ---------- */
+const lcd = $("#lcd");
+function glyph(rowsArr, x0, x, y){ const gx = x - x0; return gx>=0 && gx<5 && rowsArr[y] && rowsArr[y][gx]==="1"; }
+
+function frame(){
+  const rem = remainingMs(), total = dur(st.mode);
+  const secs = Math.ceil(rem/1000), mm = Math.min(99, Math.floor(secs/60)), ss = secs % 60;
+  const d = [Math.floor(mm/10), mm%10, Math.floor(ss/10), ss%10];
+  const elapsed = Math.min(1, Math.max(0, 1 - rem/total));
+  const lit = st.running ? Math.floor(elapsed*32) : Math.round(elapsed*32);
+  const pristine = !st.running && rem === total;
+  const t = Date.now();
+  const flash = t < flashUntil;
+  const flashOn = flash && Math.floor(t/350) % 2 === 0;
+  const colonOn = pristine || !st.running || (t % 1000) < 600;
+  const iconOn = st.running || pristine || (Math.floor(t/600) % 2 === 0);
+  const ic = ICONS[st.mode];
+
+  drawMatrix(lcd, 32, 8, (x, y) => {
+    if(flash) return flashOn ? 1 : 0;
+    if(y === 7) return x < lit ? 0.9 : 0.22;                               // progress row
+    if(x <= 4) return iconOn && ic[y][x]==="1" ? 1 : 0;                     // mode icon
+    if(x >= 7  && x <= 11) return glyph(DIGITS[d[0]], 7,  x, y) ? 1 : 0;
+    if(x >= 13 && x <= 17) return glyph(DIGITS[d[1]], 13, x, y) ? 1 : 0;
+    if(x === 19) return colonOn && (y === 2 || y === 4) ? 1 : 0;
+    if(x >= 21 && x <= 25) return glyph(DIGITS[d[2]], 21, x, y) ? 1 : 0;
+    if(x >= 27 && x <= 31) return glyph(DIGITS[d[3]], 27, x, y) ? 1 : 0;
+    return 0;
+  }, MODES[st.mode].color);
+
+  document.title = pad2(mm) + ":" + pad2(ss) + " · " + MODES[st.mode].name;
+}
+
+/* ---------- UI sync ---------- */
+function syncUI(){
+  const m = MODES[st.mode];
+  document.documentElement.style.setProperty("--c", m.color);
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", "#000000");
+  document.querySelectorAll(".modes button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === st.mode));
+  $("#modeName").textContent = m.name;
+  const rem = remainingMs(), pristine = !st.running && rem === dur(st.mode);
+  $("#go").textContent = st.running ? "Pause" : (pristine ? "Start" : "Resume");
+  const dots = $("#rounds"); dots.innerHTML = "";
+  const filled = st.mode === "long" ? cfg.rounds : Math.min(st.done, cfg.rounds);
+  for(let i=0;i<cfg.rounds;i++){ const e = document.createElement("i"); if(i < filled) e.className = "on"; dots.appendChild(e); }
+  $("#device").style.filter = "brightness(" + (cfg.bright/100) + ")";
+  updateToday();
+  saveState();
+}
+function updateToday(){
+  const k = dayKey(Date.now()), today = getLog().filter(e => dayKey(e.t) === k);
+  const mins = today.reduce((a,e) => a + e.m, 0);
+  $("#todayLine").innerHTML = "Today: <b>" + today.length + "</b> pomodoro" + (today.length===1?"":"s") + " · <b>" + mins + "</b> min focused";
+}
+
+/* ---------- timer actions ---------- */
+function start(){
+  unlockAudio(); askNotify();
+  if(st.running) return;
+  if(st.remaining <= 0) st.remaining = dur(st.mode);
+  st.endsAt = Date.now() + st.remaining; st.running = true; flashUntil = 0;
+  wake(); syncUI();
+}
+function pause(){
+  if(!st.running) return;
+  st.remaining = Math.max(0, st.endsAt - Date.now()); st.running = false;
+  unwake(); syncUI();
+}
+function toggle(){ st.running ? pause() : start(); }
+function reset(){ st.running = false; st.remaining = dur(st.mode); flashUntil = 0; unwake(); syncUI(); }
+function setMode(mode, run){
+  st.mode = mode; st.remaining = dur(mode); st.running = false; flashUntil = 0;
+  if(run){ st.endsAt = Date.now() + st.remaining; st.running = true; wake(); } else unwake();
+  syncUI();
+}
+function nextMode(from){
+  if(from === "focus") return st.done >= cfg.rounds ? "long" : "short";
+  return "focus";
+}
+function complete(silent, at){
+  const from = st.mode;
+  if(from === "focus"){ addLog({t: at || Date.now(), m: cfg.focus, label: st.label || ""}); st.done++; }
+  const next = nextMode(from);
+  if(from === "long") st.done = 0;
+  setMode(next, cfg.autostart && !silent);
+  if(!silent){ flashUntil = Date.now() + 6000; notifyDone(from, next); }
+}
+function skip(){
+  const was = st.running, from = st.mode, next = nextMode(from);
+  if(from === "long") st.done = 0;
+  setMode(next, was);
+}
+function tick(){
+  if(st.running && Date.now() >= st.endsAt) complete(false);
+  frame();
+}
+
+/* ---------- alerts ---------- */
+let actx = null;
+function unlockAudio(){
+  try{ actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if(actx.state === "suspended") actx.resume(); }catch{}
+}
+function beeps(freqs){
+  if(!actx) return;
+  freqs.forEach((f, i) => {
+    const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + i*0.22;
+    o.type = "square"; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.18, t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0+0.18);
+    o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0+0.2);
+  });
+}
+function askNotify(){ try{ if("Notification" in window && Notification.permission === "default") Notification.requestPermission(); }catch{} }
+function notifyDone(from, next){
+  if(cfg.sound) beeps(from === "focus" ? [880, 988, 1175, 1319] : [660, 523, 440]);
+  if(cfg.vibrate && navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 400]);
+  try{
+    if("Notification" in window && Notification.permission === "granted" && document.hidden){
+      new Notification(from === "focus" ? "Focus done — take a break" : "Break over — back to focus", {body: MODES[next].name + " is ready", silent: false});
+    }
+  }catch{}
+}
+
+/* ---------- wake lock (keeps the second screen alive) ---------- */
+let lock = null;
+async function wake(){
+  if(!cfg.awake || !("wakeLock" in navigator) || lock) return;
+  try{ lock = await navigator.wakeLock.request("screen"); lock.addEventListener("release", () => { lock = null; }); }catch{}
+}
+function unwake(){ try{ lock && lock.release(); }catch{} lock = null; }
+document.addEventListener("visibilitychange", () => { if(!document.hidden){ if(st.running) wake(); tick(); } });
+
+/* ---------- display (zen) mode ---------- */
+function zen(on){
+  document.body.classList.toggle("zen", on);
+  try{
+    if(on && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+    if(!on && document.fullscreenElement) document.exitFullscreen();
+  }catch{}
+  frame();
+}
+document.addEventListener("fullscreenchange", () => { if(!document.fullscreenElement && document.body.classList.contains("zen")) zen(false); });
+$("#device").addEventListener("click", () => { if(document.body.classList.contains("zen")) zen(false); });
+$("#app").addEventListener("click", e => { if(document.body.classList.contains("zen") && !e.target.closest("#device")) zen(false); });
+
+/* ---------- stats dialog ---------- */
+function openStats(){
+  const log = getLog(), k = dayKey(Date.now());
+  const today = log.filter(e => dayKey(e.t) === k);
+  $("#st_today").textContent = today.length;
+  $("#st_min").textContent = today.reduce((a,e) => a+e.m, 0);
+  $("#st_total").textContent = log.length;
+  const days = [], labels = $("#weekLabels"); labels.innerHTML = "";
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const n = log.filter(e => dayKey(e.t) === dayKey(d)).length;
+    days.push(n);
+    const s = document.createElement("span"); s.textContent = d.toLocaleDateString(undefined, {weekday:"narrow"}); if(i===0) s.className = "today"; labels.appendChild(s);
+  }
+  const ul = $("#todayLog"); ul.innerHTML = "";
+  if(!today.length){ const li = document.createElement("li"); li.textContent = "No pomodoros yet today."; ul.appendChild(li); }
+  today.slice().reverse().forEach(e => {
+    const li = document.createElement("li"), a = document.createElement("span"), b = document.createElement("span");
+    a.textContent = new Date(e.t).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    b.textContent = e.label || "Focus · " + e.m + " min"; li.append(a, b); ul.appendChild(li);
+  });
+  $("#dlgStats").showModal();
+  const col = MODES.focus.color;
+  requestAnimationFrame(() => drawMatrix($("#week"), 28, 8, (x, y) => {
+    if(x % 4 === 0 || x % 4 === 3) return 0;
+    const i = Math.floor(x/4), h = Math.min(8, days[i]);
+    return (7 - y) < h ? (i === 6 ? 1 : 0.7) : 0;
+  }, col));
+}
+
+/* ---------- settings dialog ---------- */
+function openSettings(){
+  ["focus","short","long","rounds","bright"].forEach(k => $("#s_"+k).value = cfg[k]);
+  ["autostart","sound","vibrate","awake"].forEach(k => $("#s_"+k).checked = cfg[k]);
+  $("#dlgSet").showModal();
+}
+["focus","short","long","rounds"].forEach(k => $("#s_"+k).addEventListener("change", e => {
+  const wasFull = !st.running && st.remaining === dur(st.mode);
+  const max = k === "rounds" ? 12 : 99;
+  cfg[k] = Math.min(max, Math.max(1, parseInt(e.target.value, 10) || DEF[k])); e.target.value = cfg[k];
+  if(wasFull) st.remaining = dur(st.mode);
+  saveCfg(); syncUI(); frame();
+}));
+["autostart","sound","vibrate","awake"].forEach(k => $("#s_"+k).addEventListener("change", e => {
+  cfg[k] = e.target.checked; saveCfg();
+  if(k === "awake"){ cfg.awake && st.running ? wake() : unwake(); }
+  if(k === "sound" && cfg.sound){ unlockAudio(); beeps([880]); }
+}));
+$("#s_bright").addEventListener("input", e => { cfg.bright = +e.target.value; saveCfg(); syncUI(); });
+
+/* ---------- wiring ---------- */
+document.querySelectorAll(".modes button").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode, false)));
+$("#go").addEventListener("click", toggle);
+$("#reset").addEventListener("click", reset);
+$("#skip").addEventListener("click", skip);
+$("#btnStats").addEventListener("click", openStats);
+$("#btnSet").addEventListener("click", openSettings);
+$("#btnZen").addEventListener("click", () => zen(true));
+$("#clearLog").addEventListener("click", () => { if(confirm("Delete all pomodoro history?")){ store.set("cammodoro.log", []); st.done = 0; syncUI(); $("#dlgStats").close(); } });
+$("#label").value = st.label;
+$("#label").addEventListener("input", e => { st.label = e.target.value; saveState(); });
+$("#label").addEventListener("keydown", e => { if(e.key === "Enter") e.target.blur(); });
+document.addEventListener("keydown", e => {
+  if(e.target.matches("input") || document.querySelector("dialog[open]")) return;
+  if(e.code === "Space"){ e.preventDefault(); toggle(); }
+  else if(e.key === "r" || e.key === "R") reset();
+  else if(e.key === "s" || e.key === "S") skip();
+  else if(e.key === "f" || e.key === "F") zen(!document.body.classList.contains("zen"));
+  else if(e.key === "Escape" && document.body.classList.contains("zen")) zen(false);
+});
+window.addEventListener("resize", frame);
+
+/* ---------- boot ---------- */
+if(st.running && Date.now() >= st.endsAt){ complete(true, st.endsAt); }   // timer finished while the app was closed
+if(st.running) wake();
+syncUI(); frame();
+setInterval(tick, 200);
+
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
