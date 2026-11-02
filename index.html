@@ -103,6 +103,7 @@
   body.zen .bar, body.zen .task, body.zen .controls, body.zen .today{display:none}
   body.zen .device{max-width:calc((100dvh - 120px) * 4 + 60px)}
   body.zen .status{max-width:calc((100dvh - 120px) * 4 + 60px)}
+  @media (max-width:400px){ .modes{gap:2px} .modes button{font-size:12px;letter-spacing:.04em} .tools{gap:4px} .bar{gap:8px} main{padding:12px} }
   @media (max-height:520px){ main{gap:8px;padding:10px} .controls button{height:56px} .task,.today{display:none} .tools button{height:44px} .device,.status{max-width:calc((100dvh - 205px) * 4 + 40px)} body.zen .device,body.zen .status{max-width:calc((100dvh - 90px) * 4 + 40px)} }
 </style>
 </head>
