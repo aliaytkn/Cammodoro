@@ -14,13 +14,14 @@
 <title>Cammodoro</title>
 <style>
   :root{
-    --c:#ff5a3c;            /* active mode colour, set from JS */
+    --c:#ff5a3c;            /* accent of the current view, set from JS */
     --bg:#000;
     --panel:#111214;
     --line:#26282c;
     --text:#e9eaec;
     --dim:#8a8d94;
     --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --dev-w:calc((100dvh - 250px) * 6 + 60px);   /* keeps the display + controls inside the viewport */
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);
@@ -39,17 +40,21 @@
   .tools{display:flex;gap:6px}
   .tools button{width:clamp(40px,11vw,48px);height:48px;border-radius:12px;border:1px solid var(--line);background:var(--panel);
     display:grid;place-items:center}
-  .tools svg{width:22px;height:22px;stroke:var(--text);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tools svg,.viewbtn svg{width:22px;height:22px;stroke:var(--text);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
   /* ---------- the "device" ---------- */
-  .device{background:#0b0b0c;border:1px solid var(--line);border-radius:22px;padding:clamp(10px,2.2vw,22px);
+  .device{background:#0b0b0c;border:1px solid var(--line);border-radius:22px;padding:clamp(8px,2vw,20px);
     box-shadow:inset 0 0 0 6px #050505, 0 0 60px color-mix(in srgb,var(--c) 10%,transparent);
-    width:100%;max-width:calc((100dvh - 250px) * 4 + 60px);margin:0 auto}
+    width:100%;max-width:var(--dev-w);margin:0 auto}
   #lcd{display:block;width:100%}
-  .status{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;
+  .status{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;
     letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
-    width:100%;max-width:calc((100dvh - 250px) * 4 + 60px);margin:-4px auto 0}
-  #modeName{color:var(--c);font-weight:700}
+    width:100%;max-width:var(--dev-w);margin:-4px auto 0}
+  #modeName{color:var(--c);font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .viewbtn{display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--panel);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--text)}
+  .viewbtn svg{width:18px;height:18px;stroke:var(--c)}
+  .viewbtn:active{transform:scale(.97)}
   .rounds{display:flex;gap:8px;align-items:center}
   .rounds i{width:14px;height:14px;border-radius:3px;background:#1d1e21;display:block}
   .rounds i.on{background:var(--c);box-shadow:0 0 10px var(--c)}
@@ -72,18 +77,23 @@
   dialog{background:#101113;color:var(--text);border:1px solid var(--line);border-radius:20px;padding:0;
     width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
   dialog::backdrop{background:rgba(0,0,0,.75)}
-  .dlg{padding:20px;display:flex;flex-direction:column;gap:14px}
-  .dlg h2{margin:0;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .dlg{padding:20px;display:flex;flex-direction:column;gap:10px}
+  .dlg h2{margin:10px 0 0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .dlg h2:first-child{margin-top:0}
   .row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:15px;min-height:44px}
   .row input[type=number]{width:84px;height:44px;background:#000;border:1px solid var(--line);border-radius:10px;
     color:var(--text);font:inherit;text-align:center;font-size:17px}
+  .row input[type=text]{flex:1;min-width:0;height:44px;background:#000;border:1px solid var(--line);border-radius:10px;
+    color:var(--text);font:inherit;font-size:16px;padding:0 12px;-webkit-user-select:text;user-select:text}
+  .row select{height:44px;background:#000;color:var(--text);border:1px solid var(--line);border-radius:10px;font:inherit;font-size:15px;padding:0 10px;max-width:60%}
   .row input[type=range]{width:180px;accent-color:var(--c)}
   .switch{appearance:none;-webkit-appearance:none;width:52px;height:30px;border-radius:15px;background:#26282c;position:relative;
     flex:none;transition:background .15s;cursor:pointer}
   .switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
   .switch:checked{background:var(--c)}
   .switch:checked::after{transform:translateX(22px)}
-  .close{height:52px;border-radius:14px;border:0;background:var(--c);color:#000;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  .close{height:52px;border-radius:14px;border:0;background:var(--c);color:#000;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-top:6px}
+  .ghost{height:44px;border-radius:12px;border:1px solid var(--line);background:#000;font-size:14px}
   .sub{font-size:12px;color:var(--dim);margin:0;line-height:1.5}
   .big{display:flex;gap:12px}
   .big div{flex:1;background:#000;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
@@ -100,11 +110,16 @@
   .link{background:none;border:0;color:var(--dim);text-decoration:underline;font-size:12px;padding:8px}
 
   /* ---------- display (zen) mode ---------- */
-  body.zen .bar, body.zen .task, body.zen .controls, body.zen .today{display:none}
-  body.zen .device{max-width:calc((100dvh - 120px) * 4 + 60px)}
-  body.zen .status{max-width:calc((100dvh - 120px) * 4 + 60px)}
-  @media (max-width:400px){ .modes{gap:2px} .modes button{font-size:12px;letter-spacing:.04em} .tools{gap:4px} .bar{gap:8px} main{padding:12px} }
-  @media (max-height:520px){ main{gap:8px;padding:10px} .controls button{height:56px} .task,.today{display:none} .tools button{height:44px} .device,.status{max-width:calc((100dvh - 205px) * 4 + 40px)} body.zen .device,body.zen .status{max-width:calc((100dvh - 90px) * 4 + 40px)} }
+  body.zen .bar, body.zen .task, body.zen .controls, body.zen .today, body.zen .viewbtn{display:none}
+  body.zen{--dev-w:calc((100dvh - 120px) * 6 + 60px)}
+  @media (max-width:480px){
+    .bar{flex-wrap:wrap;gap:8px} .modes{flex:1 1 100%;gap:2px} .modes button{flex:1;padding:10px 4px;font-size:12px;letter-spacing:.04em}
+    .tools{margin-left:auto} main{padding:12px} .status{font-size:12px;letter-spacing:.06em} .viewbtn{padding:0 10px;gap:6px}
+  }
+  @media (max-height:520px){
+    main{gap:8px;padding:10px} .controls button{height:56px} .task,.today{display:none} .tools button{height:44px}
+    :root{--dev-w:calc((100dvh - 205px) * 6 + 40px)} body.zen{--dev-w:calc((100dvh - 90px) * 6 + 40px)}
+  }
 </style>
 </head>
 <body>
@@ -122,8 +137,12 @@
     </div>
   </div>
 
-  <section class="device" id="device" aria-label="Timer display"><canvas id="lcd" role="img" aria-label="Pixel timer"></canvas></section>
-  <div class="status"><span id="modeName">Focus</span><span class="rounds" id="rounds" aria-label="Pomodoros in this cycle"></span></div>
+  <section class="device" id="device" aria-label="Display"><canvas id="lcd" role="img" aria-label="Pixel display"></canvas></section>
+  <div class="status">
+    <span id="modeName">Focus</span>
+    <button class="viewbtn" id="btnView" aria-label="Change display: timer, clock, weather"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg><span id="viewName">Timer</span></button>
+    <span class="rounds" id="rounds" aria-label="Pomodoros in this cycle"></span>
+  </div>
 
   <div class="task"><input id="label" type="text" maxlength="60" placeholder="What are you working on?" autocomplete="off" enterkeyhint="done"></div>
 
@@ -136,16 +155,29 @@
 </main>
 
 <dialog id="dlgSet"><form method="dialog" class="dlg">
-  <h2>Settings</h2>
+  <h2>Timer</h2>
   <label class="row">Focus (min)<input type="number" id="s_focus" min="1" max="99" inputmode="numeric"></label>
   <label class="row">Short break (min)<input type="number" id="s_short" min="1" max="99" inputmode="numeric"></label>
   <label class="row">Long break (min)<input type="number" id="s_long" min="1" max="99" inputmode="numeric"></label>
   <label class="row">Focus rounds before long break<input type="number" id="s_rounds" min="1" max="12" inputmode="numeric"></label>
   <label class="row">Auto-start next timer<input type="checkbox" class="switch" id="s_autostart"></label>
+  <h2>Alerts</h2>
   <label class="row">Sound<input type="checkbox" class="switch" id="s_sound"></label>
+  <label class="row">Alarm style<select id="s_sstyle"><option value="chime">Chime (bells)</option><option value="arcade">Arcade</option><option value="zen">Singing bowl</option></select></label>
+  <label class="row">Volume<input type="range" id="s_vol" min="5" max="100"></label>
   <label class="row">Vibrate<input type="checkbox" class="switch" id="s_vibrate"></label>
-  <label class="row">Keep screen on while running<input type="checkbox" class="switch" id="s_awake"></label>
+  <h2>Display</h2>
+  <label class="row">Keep screen on<input type="checkbox" class="switch" id="s_awake"></label>
   <label class="row">Brightness<input type="range" id="s_bright" min="15" max="100"></label>
+  <label class="row">24-hour clock<input type="checkbox" class="switch" id="s_h24"></label>
+  <label class="row">Clock style<select id="s_cstyle"><option value="seconds">HH:MM:SS</option><option value="classic">Classic + date</option></select></label>
+  <label class="row">Clock colour<select id="s_ccolor"><option value="#ffffff">White</option><option value="#ffb02e">Amber</option><option value="#35e08c">Green</option><option value="#3db8ff">Cyan</option><option value="#ff5fa2">Pink</option></select></label>
+  <label class="row">Show clock when idle (min, 0 = off)<input type="number" id="s_autoclock" min="0" max="120" inputmode="numeric"></label>
+  <h2>Weather</h2>
+  <label class="row">City<input type="text" id="s_city" placeholder="e.g. Istanbul" autocomplete="off"></label>
+  <button type="button" class="ghost" id="btnLoc">Use my location</button>
+  <p class="sub" id="cityMsg"></p>
+  <label class="row">Temperature<select id="s_wunit"><option value="c">°C</option><option value="f">°F</option></select></label>
   <button class="close">Done</button>
 </form></dialog>
 
@@ -168,10 +200,8 @@
 <script>
 "use strict";
 /* ============================================================
-   Cammodoro — pixel-matrix pomodoro timer
-   32 × 8 LED matrix, in the spirit of small pixel clocks.
-   Layout (columns): 0-4 mode icon | 7-11,13-17 minutes | 19 colon | 21-25,27-31 seconds
-   Rows: 0-6 digits, 7 progress bar
+   Cammodoro — pixel-matrix pomodoro timer, clock and weather
+   48 × 8 LED matrix. One button cycles the views: Timer → Clock → Weather.
    ============================================================ */
 const $ = s => document.querySelector(s);
 const store = {
@@ -179,7 +209,10 @@ const store = {
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
 };
 
-/* ---------- pixel fonts (5 x 7) ---------- */
+const COLS = 48, ROWS = 8;
+
+/* ---------- pixel fonts ---------- */
+// 5 x 7 digits (rows are strings of 0/1)
 const DIGITS = [
  ["01110","10001","10011","10101","11001","10001","01110"],
  ["00100","01100","00100","00100","00100","00100","01110"],
@@ -192,23 +225,54 @@ const DIGITS = [
  ["01110","10001","10001","01110","10001","10001","01110"],
  ["01110","10001","10001","01111","00001","00010","01100"],
 ];
-const ICONS = {
-  focus:["00100","01110","11111","11111","11111","11111","01110"],   // tomato
-  short:["01010","10100","00000","11110","10011","11110","11110"],   // cup
-  long: ["00110","01100","11000","11000","11000","01100","00110"],   // moon
+const UNIT_GLYPH = {
+  c:["01110","10001","10000","10000","10000","10001","01110"],
+  f:["11111","10000","10000","11110","10000","10000","10000"],
 };
+// 3 x 5 letters (15 chars = 5 rows of 3)
+const F3 = {
+ A:"010101111101101",B:"110101110101110",C:"011100100100011",D:"110101101101110",E:"111100110100111",F:"111100110100100",
+ G:"011100101101011",H:"101101111101101",I:"111010010010111",J:"001001001101010",K:"101101110101101",L:"100100100100111",
+ M:"101111111101101",N:"110101101101101",O:"010101101101010",P:"110101110100100",Q:"010101101111011",R:"110101110101101",
+ S:"011100010001110",T:"111010010010010",U:"101101101101111",V:"101101101101010",W:"101101111111101",X:"101101010101101",
+ Y:"101101010010010",Z:"111001010100111",
+ 0:"111101101101111",1:"010110010010111",2:"110001010100111",3:"110001010001110",4:"101101111001001",
+ 5:"111100110001110",6:"011100111101111",7:"111001010010010",8:"111101111101111",9:"111101111001110",
+ "-":"000000111000000","!":"010010010000010","?":"110001010000010"," ":"000000000000000"
+};
+function textCols(str){
+  const cols = [];
+  for(const ch of str){
+    const g = F3[ch] || F3[" "];
+    for(let x=0;x<3;x++) cols.push([0,1,2,3,4].map(y => g[y*3+x] === "1"));
+    cols.push([false,false,false,false,false]);
+  }
+  cols.pop(); return cols;
+}
+const ascii = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/ı/g,"i").toUpperCase().replace(/[^A-Z0-9 \-!?]/g," ").replace(/\s+/g," ").trim();
+
+/* ---------- colours: a value returned for a pixel is alpha (0..1) in the view's own colour,
+   negative = white, or  k*10 + alpha  for palette entry k ---------- */
+const PAL = [null, "#ffffff", "#ffb02e", "#3db8ff", "#aab2c0", "#ff5fa2", "#35e08c"];
+const C = (k, a = 1) => k*10 + a;
+const WHITE = 1, AMBER = 2, CYAN = 3, GREY = 4, PINK = 5, GREEN = 6;
+
 const MODES = {
-  focus:{name:"Focus",       color:"#ff5a3c"},
-  short:{name:"Short break", color:"#35e08c"},
-  long: {name:"Long break",  color:"#3db8ff"},
+  focus:{name:"Focus",       color:"#ff5a3c", label:"BUSY"},
+  short:{name:"Short break", color:"#35e08c", label:"REST"},
+  long: {name:"Long break",  color:"#3db8ff", label:"FREE"},
 };
+const VIEWS = ["timer", "clock", "weather"];
+const VIEW_NAME = {timer:"Timer", clock:"Clock", weather:"Weather"};
 
 /* ---------- settings + state ---------- */
-const DEF = {focus:25, short:5, long:15, rounds:4, autostart:true, sound:true, vibrate:true, awake:true, bright:100};
+const DEF = {focus:25, short:5, long:15, rounds:4, autostart:true, sound:true, sstyle:"chime", volume:70, vibrate:true, awake:true,
+  bright:100, h24:true, cstyle:"seconds", ccolor:"#ffffff", autoclock:1, wloc:null, wunit:"c"};
 const cfg = Object.assign({}, DEF, store.get("cammodoro.cfg", {}));
 const dur = m => cfg[m] * 60000;
 let st = Object.assign({mode:"focus", running:false, endsAt:0, remaining:dur("focus"), done:0, label:""}, store.get("cammodoro.state", {}));
-let flashUntil = 0;
+let view = "timer", lastActive = Date.now(), viewT0 = Date.now();
+let flashUntil = 0, celebrate = null;
 const saveState = () => store.set("cammodoro.state", st);
 const saveCfg   = () => store.set("cammodoro.cfg", cfg);
 
@@ -217,7 +281,6 @@ const getLog = () => store.get("cammodoro.log", []);
 const addLog = e => { const l = getLog(); l.push(e); store.set("cammodoro.log", l.slice(-2000)); };
 const dayKey = t => { const d = new Date(t); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); };
 
-/* ---------- time helpers ---------- */
 const remainingMs = () => st.running ? Math.max(0, st.endsAt - Date.now()) : st.remaining;
 const pad2 = n => String(n).padStart(2, "0");
 
@@ -233,8 +296,10 @@ function drawMatrix(cv, cols, rows, fn, color){
   const c = cell*dpr, pad = c*0.13, s = c - pad*2, r = s*0.24;
   for(let y=0; y<rows; y++){
     for(let x=0; x<cols; x++){
-      const v = fn(x, y);
-      if(v > 0){ g.shadowColor = color; g.shadowBlur = c*0.55*v; g.fillStyle = color; g.globalAlpha = Math.min(1, v); }
+      let v = fn(x, y), col = color;
+      if(v < 0){ v = -v; col = "#ffffff"; }
+      else if(v > 1){ const k = Math.ceil(v/10) - 1; col = PAL[k] || color; v = v - 10*k; }
+      if(v > 0){ g.shadowColor = col; g.shadowBlur = c*0.55*v; g.fillStyle = col; g.globalAlpha = Math.min(1, v); }
       else     { g.shadowBlur = 0; g.fillStyle = "#ffffff"; g.globalAlpha = 0.075; }
       const px = x*c + pad, py = y*c + pad;
       g.beginPath();
@@ -244,93 +309,358 @@ function drawMatrix(cv, cols, rows, fn, color){
   }
   g.globalAlpha = 1; g.shadowBlur = 0;
 }
-
-/* ---------- main display ---------- */
 const lcd = $("#lcd");
-function glyph(rowsArr, x0, x, y){ const gx = x - x0; return gx>=0 && gx<5 && rowsArr[y] && rowsArr[y][gx]==="1"; }
+const glyph = (rows, x0, x, y) => { const gx = x - x0; return gx >= 0 && gx < 5 && rows[y] && rows[y][gx] === "1"; };
 
-function frame(){
+// small off-screen buffer for views that are composed from sprites
+function newBuf(){ return new Array(COLS*ROWS).fill(0); }
+function setPx(buf, x, y, v){ if(x >= 0 && x < COLS && y >= 0 && y < ROWS) buf[y*COLS + x] = v; }
+function blit(buf, rows, x0, y0, v){
+  for(let y=0;y<rows.length;y++) for(let x=0;x<rows[y].length;x++){ const ch = rows[y][x]; if(ch === "#" || ch === "1") setPx(buf, x0+x, y0+y, v); }
+}
+function blitText(buf, str, x0, y0, v){ textCols(str).forEach((col, i) => col.forEach((on, y) => { if(on) setPx(buf, x0+i, y0+y, v); })); }
+const textW = s => Math.max(0, s.length*4 - 1);
+const drawBuf = (buf, color) => drawMatrix(lcd, COLS, ROWS, (x, y) => buf[y*COLS + x], color);
+
+// weekday bar (Mon..Sun), today brightest — shared by clock and weather
+function weekBar(buf, d, v){
+  const dow = (d.getDay() + 6) % 7;
+  for(let i=0;i<7;i++) for(let k=0;k<5;k++) setPx(buf, 3 + i*6 + k, 7, i === dow ? C(v, 1) : C(v, 0.28));
+}
+// scrolling ticker over rows 1-5; returns true while active
+function ticker(buf, cols, elapsedMs, speed, v){
+  const total = (COLS + cols.length) / speed * 1000;
+  if(elapsedMs < 0 || elapsedMs >= total) return false;
+  const mx = COLS - Math.floor(elapsedMs/1000*speed);
+  for(let x=0;x<COLS;x++){ const c = cols[x - mx]; if(c) for(let y=0;y<5;y++) if(c[y]) setPx(buf, x, y+1, v); }
+  return true;
+}
+const hash = (a, b, c) => { let h = Math.imul(a, 374761393) + Math.imul(b, 668265263) + Math.imul(c, 2147483647) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return (h ^ (h >>> 16)) >>> 0; };
+
+/* ============================================================
+   VIEW 1 — pomodoro timer   [BUSY] 24:59
+   ============================================================ */
+function frameTimer(){
   const rem = remainingMs(), total = dur(st.mode);
   const secs = Math.ceil(rem/1000), mm = Math.min(99, Math.floor(secs/60)), ss = secs % 60;
   const d = [Math.floor(mm/10), mm%10, Math.floor(ss/10), ss%10];
   const elapsed = Math.min(1, Math.max(0, 1 - rem/total));
-  const lit = st.running ? Math.floor(elapsed*32) : Math.round(elapsed*32);
+  const lit = st.running ? Math.floor(elapsed*44) : Math.round(elapsed*44);
   const pristine = !st.running && rem === total;
   const t = Date.now();
-  const flash = t < flashUntil;
-  const flashOn = flash && Math.floor(t/350) % 2 === 0;
   const colonOn = pristine || !st.running || (t % 1000) < 600;
-  const iconOn = st.running || pristine || (Math.floor(t/600) % 2 === 0);
-  const ic = ICONS[st.mode];
-
-  drawMatrix(lcd, 32, 8, (x, y) => {
-    if(flash) return flashOn ? 1 : 0;
-    if(y === 7) return x < lit ? 0.9 : 0.22;                               // progress row
-    if(x <= 4) return iconOn && ic[y][x]==="1" ? 1 : 0;                     // mode icon
-    if(x >= 7  && x <= 11) return glyph(DIGITS[d[0]], 7,  x, y) ? 1 : 0;
-    if(x >= 13 && x <= 17) return glyph(DIGITS[d[1]], 13, x, y) ? 1 : 0;
-    if(x === 19) return colonOn && (y === 2 || y === 4) ? 1 : 0;
-    if(x >= 21 && x <= 25) return glyph(DIGITS[d[2]], 21, x, y) ? 1 : 0;
-    if(x >= 27 && x <= 31) return glyph(DIGITS[d[3]], 27, x, y) ? 1 : 0;
+  const badgeOn = st.running || pristine || (Math.floor(t/600) % 2 === 0);
+  const tc = textCols(MODES[st.mode].label);
+  const PX = [21, 27, 35, 41];
+  drawMatrix(lcd, COLS, ROWS, (x, y) => {
+    if(y === 7) return (x >= 2 && x < 46) ? (x - 2 < lit ? 0.9 : 0.22) : 0;          // progress row
+    if(x >= 2 && x <= 18){                                                              // status badge
+      if(!badgeOn || y > 6) return 0;
+      const px = x - 2;
+      if((px === 0 || px === 16) && (y === 0 || y === 6)) return 0;                     // rounded corners
+      if(y >= 1 && y <= 5 && px >= 1 && px <= 15){ const c = tc[px-1]; if(c && c[y-1]) return -1; }
+      return 1;
+    }
+    for(let i=0;i<4;i++) if(x >= PX[i] && x < PX[i]+5) return glyph(DIGITS[d[i]], PX[i], x, y) ? -1 : 0;
+    if(x === 33) return colonOn && (y === 2 || y === 4) ? -1 : 0;
     return 0;
   }, MODES[st.mode].color);
-
   document.title = pad2(mm) + ":" + pad2(ss) + " · " + MODES[st.mode].name;
 }
 
+/* ============================================================
+   Finish animation — ripple, text reveal, confetti
+   ============================================================ */
+function startCelebrate(from){
+  const text = from === "focus" ? "WELL DONE" : "BREAK OVER";
+  celebrate = {t0: Date.now(), cols: textCols(text), color: MODES[from].color};
+  flashUntil = celebrate.t0 + 6500;
+}
+function frameCelebrate(t){
+  const e = t - celebrate.t0, cols = celebrate.cols, x0 = Math.floor((COLS - cols.length)/2);
+  const r = e/1000*24, fade = e > 5600 ? Math.max(0, 1 - (e - 5600)/900) : 1, step = Math.floor(e/110);
+  drawMatrix(lcd, COLS, ROWS, (x, y) => {
+    const d = Math.hypot(x - 23.5, y - 3.5);
+    if(e < 1500 && Math.abs(d - r) < 1.7) return -(1 - Math.abs(d - r)/1.7);               // expanding ring
+    if(y === 7) return (0.45 + 0.5*Math.sin(e/140 + x/3)) * fade;                            // pulsing base line
+    if(d < r && y >= 1 && y <= 5){                                                           // text revealed by the ring
+      const c = cols[x - x0];
+      if(c && c[y-1]) return -((0.8 + 0.2*Math.sin(e/120)) * fade);
+    }
+    if(e > 500){                                                                              // confetti
+      const h = hash(x, y, step);
+      if(h % 100 < 8*fade) return C([AMBER, CYAN, PINK, GREEN][(h >>> 8) % 4], 0.45 + ((h >>> 12) % 50)/100);
+    }
+    return d < r && e < 1500 ? 0.14*(1 - e/1500) : 0;
+  }, celebrate.color);
+  document.title = "✓ Done";
+}
+
+/* ============================================================
+   VIEW 2 — retro clock
+   ============================================================ */
+const SUN_A = ["....#....","...###...","..#####..","#.#####.#","..#####..","...###...","....#...."];
+const SUN_B = [".........",".#.###.#.","..#####..","..#####..","..#####..",".#.###.#.","........."];
+const MOON  = ["...###...","..##.....",".##......",".##......",".##......","..##.....","...###..."];
+const WD = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+const MO = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+const MARQ_START = 30000, MARQ_SPEED = 14;
+let marq = {key:"", cols:[]};
+function marqueeCols(d){
+  const key = d.toDateString();
+  if(marq.key !== key) marq = {key, cols: textCols(WD[d.getDay()] + " " + d.getDate() + " " + MO[d.getMonth()])};
+  return marq.cols;
+}
+function clockDigits(d, sec){
+  let h = d.getHours(); const m = d.getMinutes();
+  if(!cfg.h24) h = h % 12 || 12;
+  const out = [(!cfg.h24 && h < 10) ? -1 : Math.floor(h/10), h % 10, Math.floor(m/10), m % 10];
+  if(sec){ const s = d.getSeconds(); out.push(Math.floor(s/10), s % 10); }
+  return out;
+}
+const dRow = (v, y) => v < 0 ? "00000" : DIGITS[v][y];
+
+function frameClock(){
+  const t = Date.now(), d = new Date(t), sec = cfg.cstyle === "seconds";
+  const tickMs = sec ? 1000 : 60000, since = t % tickMs, win = sec ? 280 : 500;
+  const cur = clockDigits(d, sec), prev = clockDigits(new Date(t - tickMs), sec);
+  const p = Math.min(1, since/win), off = Math.round((1 - Math.pow(1 - p, 3)) * 8), rolling = p < 1;   // digits roll up
+  const colonOn = d.getMilliseconds() < 500;
+  const odd = d.getSeconds() % 2, night = d.getHours() < 6 || d.getHours() >= 19;
+  const px = sec ? [4,10,18,24,32,38] : [17,23,31,37], colons = sec ? [16,30] : [29];
+  const buf = newBuf();
+
+  weekBar(buf, d, 0);
+  let tick = false;
+  if(!sec){
+    const cols = marqueeCols(d);
+    tick = ticker(buf, cols, d.getSeconds()*1000 + d.getMilliseconds() - MARQ_START, MARQ_SPEED, 1);
+    if(!tick){
+      if(night){ blit(buf, MOON, 5, 0, 1); setPx(buf, 5 + (odd ? 7 : 6), odd ? 4 : 2, 1); setPx(buf, 5 + 7, 5, odd ? 0 : 1); }
+      else blit(buf, odd ? SUN_B : SUN_A, 5, 0, 1);
+    }
+  }
+  if(!tick){
+    for(let i=0;i<px.length;i++){
+      const changed = rolling && cur[i] !== prev[i];
+      for(let y=0;y<7;y++){
+        let row;
+        if(changed){ const r = y + off; row = r < 7 ? dRow(prev[i], r) : (r === 7 ? "00000" : dRow(cur[i], r - 8)); }
+        else row = dRow(cur[i], y);
+        for(let x=0;x<5;x++) if(row[x] === "1") setPx(buf, px[i] + x, y, 1);
+      }
+    }
+    if(colonOn) colons.forEach(cx => { setPx(buf, cx, 2, 1); setPx(buf, cx, 4, 1); });
+  }
+  drawBuf(buf, cfg.ccolor);
+  document.title = pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + " · Clock";
+}
+function clockAnimating(t){
+  if(cfg.cstyle === "seconds") return (t % 1000) < 320;
+  const d = new Date(t), ms = d.getSeconds()*1000 + d.getMilliseconds();
+  if(ms < 600) return true;
+  return ms >= MARQ_START && ms < MARQ_START + (COLS + marqueeCols(d).length)/MARQ_SPEED*1000;
+}
+
+/* ============================================================
+   VIEW 3 — weather (Open-Meteo, no key needed)
+   ============================================================ */
+const W = {data: store.get("cammodoro.weather", null), loading:false, error:false, asked: store.get("cammodoro.geoasked", false)};
+const CLOUD = [".........","...###...","..#####..",".#######.","#########",".#######.","........."];
+const CTOP  = ["...###...","..#####..",".#######.","#########"];
+const BOLT  = ["....##...","...##....","....#...."];
+const DIAMOND = ["..#..",".###.","#####",".###.","..#.."];
+const CLOUD_S = ["..###..",".#####.","#######",".#####."];
+
+function condInfo(code, day){
+  if(code === 0) return day ? {k:"sun", n:"CLEAR"} : {k:"moon", n:"CLEAR NIGHT"};
+  if(code === 1 || code === 2) return day ? {k:"partly", n: code === 1 ? "MOSTLY CLEAR" : "PARTLY CLOUDY"} : {k:"cloud", n:"PARTLY CLOUDY"};
+  if(code === 3) return {k:"cloud", n:"OVERCAST"};
+  if(code === 45 || code === 48) return {k:"fog", n:"FOG"};
+  if(code >= 51 && code <= 57) return {k:"drizzle", n:"DRIZZLE"};
+  if((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return {k:"rain", n: code >= 80 ? "SHOWERS" : "RAIN"};
+  if((code >= 71 && code <= 77) || code === 85 || code === 86) return {k:"snow", n:"SNOW"};
+  if(code >= 95) return {k:"storm", n:"THUNDERSTORM"};
+  return {k:"cloud", n:"CLOUDY"};
+}
+function drawIcon(buf, kind, t, x0){
+  const f = Math.floor(t/500), drift = Math.round(Math.sin(t/1800));
+  const drops = (cols, speed, v, step) => cols.forEach(c => setPx(buf, x0 + c, 4 + ((Math.floor(t/speed) + c*(step||1)) % 3), v));
+  switch(kind){
+    case "sun":  blit(buf, f % 2 ? SUN_B : SUN_A, x0, 0, C(AMBER)); break;
+    case "moon": blit(buf, MOON, x0, 0, C(WHITE)); setPx(buf, x0 + (f % 2 ? 7 : 6), f % 2 ? 4 : 2, C(WHITE)); setPx(buf, x0 + 7, 5, f % 2 ? 0 : C(WHITE)); break;
+    case "partly":
+      blit(buf, DIAMOND, x0, 0, C(AMBER, f % 2 ? 1 : 0.7)); blit(buf, CLOUD_S, x0 + 2, 3, C(GREY)); break;
+    case "cloud": blit(buf, CLOUD, x0 + drift, 0, C(GREY)); break;
+    case "fog":   for(const y of [1,3,5]) for(let x=0;x<9;x++) if(((x + Math.floor(t/300) + y*2) % 5) < 3) setPx(buf, x0 + x, y, C(GREY, 0.8)); break;
+    case "drizzle": blit(buf, CTOP, x0 + drift, 0, C(GREY)); drops([2,6], 260, C(CYAN, 0.8)); break;
+    case "rain":    blit(buf, CTOP, x0 + drift, 0, C(GREY)); drops([1,3,5,7], 130, C(CYAN)); break;
+    case "snow":    blit(buf, CTOP, x0 + drift, 0, C(GREY)); [1,4,7].forEach(c => setPx(buf, x0 + c, 4 + ((Math.floor(t/380) + c) % 3), C(WHITE))); break;
+    case "storm": {
+      blit(buf, CTOP, x0, 0, C(GREY, 0.8 + 0.2*Math.sin(t/90)));
+      const m = t % 2200;
+      if(m < 260 || (m > 440 && m < 580)) blit(buf, BOLT, x0, 4, C(AMBER)); else drops([2,6], 150, C(CYAN, 0.8));
+      break;
+    }
+  }
+}
+async function fetchWeather(force){
+  if(!cfg.wloc || W.loading) return;
+  if(!force && W.data && Date.now() - W.data.t < 15*60000 && W.data.key === cfg.wloc.lat + "," + cfg.wloc.lon) return;
+  W.loading = true;
+  try{
+    const u = "https://api.open-meteo.com/v1/forecast?latitude=" + cfg.wloc.lat + "&longitude=" + cfg.wloc.lon +
+              "&current=temperature_2m,weather_code,is_day,wind_speed_10m&wind_speed_unit=kmh&timezone=auto";
+    const r = await fetch(u); if(!r.ok) throw new Error("http " + r.status);
+    const c = (await r.json()).current;
+    W.data = {temp:c.temperature_2m, code:c.weather_code, day:c.is_day === 1, wind:c.wind_speed_10m, t:Date.now(), key:cfg.wloc.lat + "," + cfg.wloc.lon};
+    store.set("cammodoro.weather", W.data); W.error = false;
+  }catch{ W.error = true; }
+  W.loading = false;
+}
+async function findCity(q){
+  const r = await fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(q) + "&count=1&language=en&format=json");
+  const j = await r.json(); const g = j.results && j.results[0];
+  return g ? {name:g.name, lat:g.latitude, lon:g.longitude} : null;
+}
+function useMyLocation(msgEl){
+  if(!navigator.geolocation){ if(msgEl) msgEl.textContent = "Location isn't available on this device."; return; }
+  if(msgEl) msgEl.textContent = "Locating…";
+  navigator.geolocation.getCurrentPosition(pos => {
+    cfg.wloc = {name:"Here", lat:+pos.coords.latitude.toFixed(3), lon:+pos.coords.longitude.toFixed(3)}; saveCfg(); W.data = null;
+    if(msgEl) msgEl.textContent = "Using your location."; if($("#s_city")) $("#s_city").value = "";
+    fetchWeather(true); syncUI();
+  }, () => { if(msgEl) msgEl.textContent = "Location permission was denied — type a city instead."; }, {timeout:10000, maximumAge:600000});
+}
+function weatherEnter(){
+  if(!cfg.wloc && !W.asked){ W.asked = true; store.set("cammodoro.geoasked", true); useMyLocation(null); }
+  fetchWeather(false);
+}
+function frameWeather(){
+  const t = Date.now(), buf = newBuf(), d = new Date(t);
+  weekBar(buf, d, 0);
+  let text = "", showMain = false;
+  if(!cfg.wloc) text = "SET A CITY IN SETTINGS";
+  else if(!W.data) text = W.error ? "NO DATA" : "LOADING";
+  else showMain = true;
+
+  if(!showMain){
+    if(text === "LOADING"){ for(let i=0;i<3;i++) blit(buf, ["##","##"], 20 + i*4, 3, C(CYAN, ((Math.floor(t/300) + i) % 3 === 0) ? 1 : 0.25)); }
+    else { const cols = textCols(text), total = (COLS + cols.length)/12*1000 + 1200; ticker(buf, cols, (t - viewT0) % total, 12, C(CYAN)); }
+    drawBuf(buf, "#3db8ff"); document.title = "Weather"; return;
+  }
+  const w = W.data, info = condInfo(w.code, w.day), unit = cfg.wunit;
+  const val = Math.round(unit === "f" ? w.temp*9/5 + 32 : w.temp), neg = val < 0, ds = String(Math.abs(val));
+  const numW = ds.length*6 - 1 + (neg ? 4 : 0), totalW = 9 + 3 + numW + 1 + 3 + 1 + 5, x0 = Math.floor((COLS - totalW)/2);
+  const city = cfg.wloc.name === "Here" ? "" : ascii(cfg.wloc.name) + "  ";
+  const tcols = textCols(city + info.n + "  WIND " + Math.round(w.wind) + " KMH" + (W.error ? "  OFFLINE" : ""));
+  const cycle = 9000 + (COLS + tcols.length)/MARQ_SPEED*1000 + 900, ph = (t - viewT0) % cycle;
+  const tk = ticker(buf, tcols, ph - 9000, MARQ_SPEED, C(WHITE));
+  if(!tk){
+    drawIcon(buf, info.k, t, x0);
+    let x = x0 + 12;
+    if(neg){ blit(buf, ["###"], x, 3, C(WHITE)); x += 4; }
+    for(const ch of ds){ blit(buf, DIGITS[+ch], x, 0, C(val >= 30 ? AMBER : (val <= 3 && unit === "c") ? CYAN : WHITE)); x += 6; }
+    blit(buf, ["010","101","010"], x, 0, C(GREY)); x += 4;
+    blit(buf, UNIT_GLYPH[unit], x, 0, C(GREY));
+  }
+  drawBuf(buf, "#3db8ff");
+  document.title = val + "° " + info.n.toLowerCase();
+}
+
+/* ---------- dispatcher ---------- */
+function frame(){
+  const t = Date.now();
+  if(celebrate && t < flashUntil){ frameCelebrate(t); return; }
+  if(view === "clock") return frameClock();
+  if(view === "weather") return frameWeather();
+  frameTimer();
+}
+function wantInterval(t){
+  if(celebrate && t < flashUntil) return 33;
+  if(view === "clock") return clockAnimating(t) ? 33 : (cfg.cstyle === "seconds" ? 100 : 250);
+  if(view === "weather"){
+    if(W.data && cfg.wloc){
+      const k = condInfo(W.data.code, W.data.day).k;
+      if(["rain","drizzle","storm","snow","fog"].includes(k)) return 50;
+    }
+    return 80;
+  }
+  return 150;
+}
+let lastDraw = 0;
+function loop(ts){
+  requestAnimationFrame(loop);
+  if(document.hidden) return;
+  if(ts - lastDraw >= wantInterval(Date.now())){ lastDraw = ts; frame(); }
+}
+
 /* ---------- UI sync ---------- */
+function viewInfo(){
+  if(view === "clock")   return {name:"Clock", color:cfg.ccolor};
+  if(view === "weather") return {name: cfg.wloc ? cfg.wloc.name : "Weather", color:"#3db8ff"};
+  return MODES[st.mode];
+}
 function syncUI(){
-  const m = MODES[st.mode];
+  const m = viewInfo();
   document.documentElement.style.setProperty("--c", m.color);
-  document.querySelector('meta[name="theme-color"]').setAttribute("content", "#000000");
-  document.querySelectorAll(".modes button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === st.mode));
+  document.querySelectorAll(".modes button").forEach(b => b.setAttribute("aria-pressed", view === "timer" && b.dataset.mode === st.mode));
   $("#modeName").textContent = m.name;
+  $("#viewName").textContent = VIEW_NAME[view];
   const rem = remainingMs(), pristine = !st.running && rem === dur(st.mode);
   $("#go").textContent = st.running ? "Pause" : (pristine ? "Start" : "Resume");
   const dots = $("#rounds"); dots.innerHTML = "";
   const filled = st.mode === "long" ? cfg.rounds : Math.min(st.done, cfg.rounds);
   for(let i=0;i<cfg.rounds;i++){ const e = document.createElement("i"); if(i < filled) e.className = "on"; dots.appendChild(e); }
   $("#device").style.filter = "brightness(" + (cfg.bright/100) + ")";
-  updateToday();
+  updateToday(); updateWake();
+  lastActive = Date.now();
   saveState();
 }
 function updateToday(){
   const k = dayKey(Date.now()), today = getLog().filter(e => dayKey(e.t) === k);
   const mins = today.reduce((a,e) => a + e.m, 0);
-  $("#todayLine").innerHTML = "Today: <b>" + today.length + "</b> pomodoro" + (today.length===1?"":"s") + " · <b>" + mins + "</b> min focused";
+  $("#todayLine").innerHTML = "Today: <b>" + today.length + "</b> pomodoro" + (today.length === 1 ? "" : "s") + " · <b>" + mins + "</b> min focused";
 }
+
+/* ---------- views ---------- */
+function setView(v){
+  if(v === view) return;
+  view = v; viewT0 = Date.now();
+  if(v === "weather") weatherEnter();
+  syncUI(); frame();
+}
+function cycleView(){ setView(VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length]); }
 
 /* ---------- timer actions ---------- */
 function start(){
   unlockAudio(); askNotify();
-  if(st.running) return;
+  view = "timer"; celebrate = null; flashUntil = 0;
+  if(st.running){ syncUI(); return; }
   if(st.remaining <= 0) st.remaining = dur(st.mode);
-  st.endsAt = Date.now() + st.remaining; st.running = true; flashUntil = 0;
-  wake(); syncUI();
+  st.endsAt = Date.now() + st.remaining; st.running = true;
+  wake(); syncUI(); frame();
 }
 function pause(){
   if(!st.running) return;
   st.remaining = Math.max(0, st.endsAt - Date.now()); st.running = false;
-  unwake(); syncUI();
+  syncUI(); frame();
 }
 function toggle(){ st.running ? pause() : start(); }
-function reset(){ st.running = false; st.remaining = dur(st.mode); flashUntil = 0; unwake(); syncUI(); }
+function reset(){ view = "timer"; st.running = false; st.remaining = dur(st.mode); celebrate = null; flashUntil = 0; syncUI(); frame(); }
 function setMode(mode, run){
-  st.mode = mode; st.remaining = dur(mode); st.running = false; flashUntil = 0;
-  if(run){ st.endsAt = Date.now() + st.remaining; st.running = true; wake(); } else unwake();
+  view = "timer"; st.mode = mode; st.remaining = dur(mode); st.running = false; celebrate = null; flashUntil = 0;
+  if(run){ st.endsAt = Date.now() + st.remaining; st.running = true; wake(); }
   syncUI();
 }
-function nextMode(from){
-  if(from === "focus") return st.done >= cfg.rounds ? "long" : "short";
-  return "focus";
-}
+function nextMode(from){ return from === "focus" ? (st.done >= cfg.rounds ? "long" : "short") : "focus"; }
 function complete(silent, at){
   const from = st.mode;
   if(from === "focus"){ addLog({t: at || Date.now(), m: cfg.focus, label: st.label || ""}); st.done++; }
   const next = nextMode(from);
   if(from === "long") st.done = 0;
   setMode(next, cfg.autostart && !silent);
-  if(!silent){ flashUntil = Date.now() + 6000; notifyDone(from, next); }
+  if(!silent){ startCelebrate(from); notifyDone(from, next); }
 }
 function skip(){
   const was = st.running, from = st.mode, next = nextMode(from);
@@ -338,31 +668,55 @@ function skip(){
   setMode(next, was);
 }
 function tick(){
-  if(st.running && Date.now() >= st.endsAt) complete(false);
-  frame();
+  const t = Date.now();
+  if(st.running && t >= st.endsAt) complete(false);
+  if(view === "timer" && !st.running && cfg.autoclock > 0 && !document.querySelector("dialog[open]") && t - lastActive > cfg.autoclock*60000) setView("clock");
+  if(view === "weather" && cfg.wloc) fetchWeather(false);
 }
 
-/* ---------- alerts ---------- */
-let actx = null;
+/* ============================================================
+   Sound — three alarm styles, all synthesised (no audio files)
+   ============================================================ */
+let actx = null, master = null;
 function unlockAudio(){
-  try{ actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if(actx.state === "suspended") actx.resume(); }catch{}
+  try{
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if(!master){ master = actx.createGain(); master.connect(actx.destination); }
+    master.gain.value = (cfg.volume/100) * 0.6;
+    if(actx.state === "suspended") actx.resume();
+  }catch{}
 }
-function beeps(freqs){
-  if(!actx) return;
-  freqs.forEach((f, i) => {
-    const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + i*0.22;
-    o.type = "square"; o.frequency.value = f;
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.18, t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0+0.18);
-    o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0+0.2);
-  });
+function note(f, at, len, type, vol, atk){
+  const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + at;
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t + (atk || 0.008));
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.connect(g).connect(master); o.start(t); o.stop(t + len + 0.05);
+}
+const bell = (f, at, vol, len = 1.8) => [[1,1,1],[2.01,.45,.6],[3.17,.22,.35],[4.3,.1,.2]].forEach(([m,a,d]) => note(f*m, at, len*d, "sine", vol*a));
+const bowl = (f, at, vol) => [[1,1,1],[2.76,.5,.7],[5.4,.25,.4]].forEach(([m,a,d]) => note(f*m, at, 4*d, "sine", vol*a, 0.04));
+function playAlarm(kind, style){
+  unlockAudio(); if(!actx) return; style = style || cfg.sstyle;
+  if(style === "chime"){
+    if(kind === "focus"){                       // bright rising arpeggio, then a full chord
+      const ns = [523.25, 659.25, 783.99, 1046.5];
+      ns.forEach((f, i) => bell(f, i*0.17, 0.5)); ns.forEach(f => bell(f, 0.95, 0.26, 2.8));
+    } else [783.99, 659.25, 523.25].forEach((f, i) => bell(f, i*0.28, 0.4, 1.6));   // soft descending "break over"
+  } else if(style === "arcade"){
+    if(kind === "focus"){ [523.25,659.25,783.99,1046.5,1318.5,1568].forEach((f, i) => note(f, i*0.07, 0.12, "square", 0.16, 0.004)); note(1568, 0.46, 0.5, "square", 0.14, 0.004); }
+    else { note(987.8, 0, 0.09, "square", 0.16, 0.003); note(1318.5, 0.09, 0.4, "square", 0.16, 0.003); }
+  } else {
+    if(kind === "focus"){ bowl(220, 0, 0.5); bowl(220, 1.5, 0.4); } else bowl(330, 0, 0.4);
+  }
 }
 function askNotify(){ try{ if("Notification" in window && Notification.permission === "default") Notification.requestPermission(); }catch{} }
 function notifyDone(from, next){
-  if(cfg.sound) beeps(from === "focus" ? [880, 988, 1175, 1319] : [660, 523, 440]);
+  if(cfg.sound) playAlarm(from === "focus" ? "focus" : "break");
   if(cfg.vibrate && navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 400]);
   try{
     if("Notification" in window && Notification.permission === "granted" && document.hidden){
-      new Notification(from === "focus" ? "Focus done — take a break" : "Break over — back to focus", {body: MODES[next].name + " is ready", silent: false});
+      new Notification(from === "focus" ? "Focus done — take a break" : "Break over — back to focus", {body: MODES[next].name + " is ready"});
     }
   }catch{}
 }
@@ -374,7 +728,8 @@ async function wake(){
   try{ lock = await navigator.wakeLock.request("screen"); lock.addEventListener("release", () => { lock = null; }); }catch{}
 }
 function unwake(){ try{ lock && lock.release(); }catch{} lock = null; }
-document.addEventListener("visibilitychange", () => { if(!document.hidden){ if(st.running) wake(); tick(); } });
+function updateWake(){ (cfg.awake && (st.running || view !== "timer")) ? wake() : unwake(); }
+document.addEventListener("visibilitychange", () => { if(!document.hidden){ updateWake(); tick(); frame(); } });
 
 /* ---------- display (zen) mode ---------- */
 function zen(on){
@@ -394,14 +749,13 @@ function openStats(){
   const log = getLog(), k = dayKey(Date.now());
   const today = log.filter(e => dayKey(e.t) === k);
   $("#st_today").textContent = today.length;
-  $("#st_min").textContent = today.reduce((a,e) => a+e.m, 0);
+  $("#st_min").textContent = today.reduce((a,e) => a + e.m, 0);
   $("#st_total").textContent = log.length;
   const days = [], labels = $("#weekLabels"); labels.innerHTML = "";
   for(let i=6;i>=0;i--){
-    const d = new Date(); d.setDate(d.getDate()-i);
-    const n = log.filter(e => dayKey(e.t) === dayKey(d)).length;
-    days.push(n);
-    const s = document.createElement("span"); s.textContent = d.toLocaleDateString(undefined, {weekday:"narrow"}); if(i===0) s.className = "today"; labels.appendChild(s);
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(log.filter(e => dayKey(e.t) === dayKey(d)).length);
+    const s = document.createElement("span"); s.textContent = d.toLocaleDateString(undefined, {weekday:"narrow"}); if(i === 0) s.className = "today"; labels.appendChild(s);
   }
   const ul = $("#todayLog"); ul.innerHTML = "";
   if(!today.length){ const li = document.createElement("li"); li.textContent = "No pomodoros yet today."; ul.appendChild(li); }
@@ -411,18 +765,20 @@ function openStats(){
     b.textContent = e.label || "Focus · " + e.m + " min"; li.append(a, b); ul.appendChild(li);
   });
   $("#dlgStats").showModal();
-  const col = MODES.focus.color;
   requestAnimationFrame(() => drawMatrix($("#week"), 28, 8, (x, y) => {
     if(x % 4 === 0 || x % 4 === 3) return 0;
     const i = Math.floor(x/4), h = Math.min(8, days[i]);
     return (7 - y) < h ? (i === 6 ? 1 : 0.7) : 0;
-  }, col));
+  }, MODES.focus.color));
 }
 
 /* ---------- settings dialog ---------- */
 function openSettings(){
-  ["focus","short","long","rounds","bright"].forEach(k => $("#s_"+k).value = cfg[k]);
-  ["autostart","sound","vibrate","awake"].forEach(k => $("#s_"+k).checked = cfg[k]);
+  ["focus","short","long","rounds","bright","autoclock","vol"].forEach(k => { const el = $("#s_"+k); if(el) el.value = k === "vol" ? cfg.volume : cfg[k]; });
+  ["autostart","sound","vibrate","awake","h24"].forEach(k => $("#s_"+k).checked = cfg[k]);
+  ["sstyle","cstyle","ccolor","wunit"].forEach(k => $("#s_"+k).value = cfg[k]);
+  $("#s_city").value = cfg.wloc && cfg.wloc.name !== "Here" ? cfg.wloc.name : "";
+  $("#cityMsg").textContent = cfg.wloc ? (cfg.wloc.name === "Here" ? "Using your location." : "Showing weather for " + cfg.wloc.name + ".") : "Pick a city, or use your location.";
   $("#dlgSet").showModal();
 }
 ["focus","short","long","rounds"].forEach(k => $("#s_"+k).addEventListener("change", e => {
@@ -432,18 +788,36 @@ function openSettings(){
   if(wasFull) st.remaining = dur(st.mode);
   saveCfg(); syncUI(); frame();
 }));
-["autostart","sound","vibrate","awake"].forEach(k => $("#s_"+k).addEventListener("change", e => {
-  cfg[k] = e.target.checked; saveCfg();
-  if(k === "awake"){ cfg.awake && st.running ? wake() : unwake(); }
-  if(k === "sound" && cfg.sound){ unlockAudio(); beeps([880]); }
+["autostart","sound","vibrate","awake","h24"].forEach(k => $("#s_"+k).addEventListener("change", e => {
+  cfg[k] = e.target.checked; saveCfg(); updateWake(); frame();
+  if(k === "sound" && cfg.sound) playAlarm("break");
 }));
+$("#s_autoclock").addEventListener("change", e => { cfg.autoclock = Math.min(120, Math.max(0, parseInt(e.target.value, 10) || 0)); e.target.value = cfg.autoclock; saveCfg(); });
 $("#s_bright").addEventListener("input", e => { cfg.bright = +e.target.value; saveCfg(); syncUI(); });
+$("#s_vol").addEventListener("input", e => { cfg.volume = +e.target.value; saveCfg(); if(master) master.gain.value = (cfg.volume/100)*0.6; });
+$("#s_vol").addEventListener("change", () => playAlarm("focus"));
+$("#s_sstyle").addEventListener("change", e => { cfg.sstyle = e.target.value; saveCfg(); playAlarm("focus"); });
+["cstyle","ccolor","wunit"].forEach(k => $("#s_"+k).addEventListener("change", e => { cfg[k] = e.target.value; saveCfg(); syncUI(); frame(); }));
+$("#s_city").addEventListener("change", async e => {
+  const q = e.target.value.trim(), msg = $("#cityMsg");
+  if(!q){ cfg.wloc = null; W.data = null; saveCfg(); msg.textContent = "Pick a city, or use your location."; syncUI(); return; }
+  msg.textContent = "Searching…";
+  try{
+    const g = await findCity(q);
+    if(!g){ msg.textContent = "Couldn't find “" + q + "”. Try another spelling."; return; }
+    cfg.wloc = g; W.data = null; saveCfg(); msg.textContent = "Showing weather for " + g.name + ".";
+    fetchWeather(true); syncUI();
+  }catch{ msg.textContent = "Can't search right now — check your connection."; }
+});
+$("#s_city").addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); e.target.blur(); } });
+$("#btnLoc").addEventListener("click", () => useMyLocation($("#cityMsg")));
 
 /* ---------- wiring ---------- */
 document.querySelectorAll(".modes button").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode, false)));
 $("#go").addEventListener("click", toggle);
 $("#reset").addEventListener("click", reset);
 $("#skip").addEventListener("click", skip);
+$("#btnView").addEventListener("click", cycleView);
 $("#btnStats").addEventListener("click", openStats);
 $("#btnSet").addEventListener("click", openSettings);
 $("#btnZen").addEventListener("click", () => zen(true));
@@ -452,20 +826,24 @@ $("#label").value = st.label;
 $("#label").addEventListener("input", e => { st.label = e.target.value; saveState(); });
 $("#label").addEventListener("keydown", e => { if(e.key === "Enter") e.target.blur(); });
 document.addEventListener("keydown", e => {
-  if(e.target.matches("input") || document.querySelector("dialog[open]")) return;
+  if(e.target.matches("input,select") || document.querySelector("dialog[open]")) return;
   if(e.code === "Space"){ e.preventDefault(); toggle(); }
   else if(e.key === "r" || e.key === "R") reset();
   else if(e.key === "s" || e.key === "S") skip();
+  else if(e.key === "v" || e.key === "V") cycleView();
   else if(e.key === "f" || e.key === "F") zen(!document.body.classList.contains("zen"));
   else if(e.key === "Escape" && document.body.classList.contains("zen")) zen(false);
 });
+["pointerdown","keydown","touchstart"].forEach(ev => document.addEventListener(ev, () => { lastActive = Date.now(); }, {passive:true, capture:true}));
 window.addEventListener("resize", frame);
 
 /* ---------- boot ---------- */
 if(st.running && Date.now() >= st.endsAt){ complete(true, st.endsAt); }   // timer finished while the app was closed
 if(st.running) wake();
+if(cfg.wloc) fetchWeather(false);
 syncUI(); frame();
-setInterval(tick, 200);
+setInterval(tick, 250);
+requestAnimationFrame(loop);
 
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
