@@ -345,24 +345,24 @@ function frameTimer(){
   const secs = Math.ceil(rem/1000), mm = Math.min(99, Math.floor(secs/60)), ss = secs % 60;
   const d = [Math.floor(mm/10), mm%10, Math.floor(ss/10), ss%10];
   const elapsed = Math.min(1, Math.max(0, 1 - rem/total));
-  const lit = st.running ? Math.floor(elapsed*44) : Math.round(elapsed*44);
+  const lit = st.running ? Math.floor(elapsed*COLS) : Math.round(elapsed*COLS);
   const pristine = !st.running && rem === total;
   const t = Date.now();
   const colonOn = pristine || !st.running || (t % 1000) < 600;
   const badgeOn = st.running || pristine || (Math.floor(t/600) % 2 === 0);
-  const tc = textCols(MODES[st.mode].label);
-  const PX = [21, 27, 35, 41];
+  const label = st.running ? MODES[st.mode].label : "READY";          // BUSY while counting, READY otherwise
+  const tc = textCols(label), tOff = 1 + Math.floor((19 - textW(label)) / 2);
+  const PX = [22, 28, 36, 42];
   drawMatrix(lcd, COLS, ROWS, (x, y) => {
-    if(y === 7) return (x >= 2 && x < 46) ? (x - 2 < lit ? 0.9 : 0.22) : 0;          // progress row
-    if(x >= 2 && x <= 18){                                                              // status badge
+    if(y === 7) return x < lit ? 0.9 : 0.22;                                            // progress row
+    if(x <= 20){                                                                         // status badge (21 wide)
       if(!badgeOn || y > 6) return 0;
-      const px = x - 2;
-      if((px === 0 || px === 16) && (y === 0 || y === 6)) return 0;                     // rounded corners
-      if(y >= 1 && y <= 5 && px >= 1 && px <= 15){ const c = tc[px-1]; if(c && c[y-1]) return -1; }
+      if((x === 0 || x === 20) && (y === 0 || y === 6)) return 0;                       // rounded corners
+      if(y >= 1 && y <= 5){ const c = tc[x - tOff]; if(c && c[y-1]) return -1; }       // white letters
       return 1;
     }
     for(let i=0;i<4;i++) if(x >= PX[i] && x < PX[i]+5) return glyph(DIGITS[d[i]], PX[i], x, y) ? -1 : 0;
-    if(x === 33) return colonOn && (y === 2 || y === 4) ? -1 : 0;
+    if(x === 34) return colonOn && (y === 2 || y === 4) ? -1 : 0;
     return 0;
   }, MODES[st.mode].color);
   document.title = pad2(mm) + ":" + pad2(ss) + " · " + MODES[st.mode].name;
